@@ -67,8 +67,7 @@ WEDNESDAY:
 THURSDAY:
 9:00 AM - 10:00 AM: Computer Networks Lab - Lab 3 - Prof. Davis
 10:15 AM - 11:15 AM: Operating Systems - Room 101 - Prof. Johnson
-2:00 PM - 4:00 PM: Seminar - Auditorium ok
-
+2:00 PM - 4:00 PM: Seminar - Auditorium 
 FRIDAY:
 9:00 AM - 10:00 AM: Web Development - Room 303 - Prof. Brown
 10:15 AM - 11:15 AM: AI and Machine Learning - Room 205 - Prof. Wilson
