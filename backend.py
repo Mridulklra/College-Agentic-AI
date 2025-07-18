@@ -74,7 +74,7 @@ FRIDAY:
 11:30 AM - 12:30 PM: Software Engineering Lab - Lab 1 - Prof. Miller
 """
     
-    # Save to a temporary file
+    # Save to a temporary fil
     with open("sample_timetable.txt", "w") as f:
         f.write(sample_content)
     
