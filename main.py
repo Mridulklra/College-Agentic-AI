@@ -1,6 +1,5 @@
 """
-College Assistant Agent - Complete Working Backend
-BAS YAHI EK FILE CHANGE KARO!
+College Assistant Agent - Fixed Backend with Better Context Understanding
 """
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -153,70 +152,22 @@ class EmailManager:
         
         return f"""
         <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
             <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
                 <div style="background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                    
-                    <!-- Header -->
                     <div style="background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%); padding: 30px; text-align: center;">
                         <h1 style="color: white; margin: 0; font-size: 28px;">📚 New Assignment</h1>
                     </div>
-                    
-                    <!-- Content -->
                     <div style="padding: 30px;">
-                        <h2 style="color: #ff6b35; margin-top: 0; font-size: 24px;">{assignment_title}</h2>
-                        
-                        <div style="background-color: #f9f9f9; padding: 20px; border-left: 4px solid #ff6b35; border-radius: 4px; margin: 20px 0;">
-                            <p style="margin: 0 0 10px 0; color: #666; font-size: 14px; font-weight: bold;">SUBJECT</p>
-                            <p style="margin: 0; color: #333; font-size: 16px;">{description.split('\\n')[0] if '\\n' in description else description[:100]}</p>
-                        </div>
-                        
+                        <h2 style="color: #ff6b35; margin-top: 0;">{assignment_title}</h2>
                         <div style="background-color: #f0f8ff; padding: 20px; border-radius: 6px; margin: 20px 0;">
-                            <p style="margin: 0 0 10px 0; color: #1976d2; font-weight: bold;">📝 DESCRIPTION</p>
-                            <p style="margin: 0; color: #333; white-space: pre-wrap; line-height: 1.6;">{description}</p>
+                            <p style="margin: 0; white-space: pre-wrap;">{description}</p>
                         </div>
-                        
-                        <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 20px; border-radius: 6px; margin: 20px 0;">
-                            <table style="width: 100%; border-collapse: collapse;">
-                                <tr>
-                                    <td style="padding: 8px 0;">
-                                        <span style="font-size: 24px; margin-right: 10px;">📅</span>
-                                        <strong style="color: #f57c00;">Due Date:</strong>
-                                    </td>
-                                    <td style="text-align: right; padding: 8px 0;">
-                                        <span style="color: #333; font-size: 16px; font-weight: bold;">{due_date}</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 8px 0;">
-                                        <span style="font-size: 24px; margin-right: 10px;">⏰</span>
-                                        <strong style="color: #f57c00;">Due Time:</strong>
-                                    </td>
-                                    <td style="text-align: right; padding: 8px 0;">
-                                        <span style="color: #333; font-size: 16px; font-weight: bold;">{due_time}</span>
-                                    </td>
-                                </tr>
-                            </table>
+                        <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); padding: 20px; border-radius: 6px;">
+                            <p><strong>📅 Due Date:</strong> {due_date}</p>
+                            <p><strong>⏰ Due Time:</strong> {due_time}</p>
                         </div>
-                        
                         {calendar_btn}
-                        
-                        <div style="background-color: #e3f2fd; padding: 18px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #2196f3;">
-                            <p style="margin: 0; font-size: 14px; color: #1565c0; line-height: 1.6;">
-                                <strong>💡 Reminder:</strong> This assignment has been automatically added to your Google Calendar. 
-                                You'll receive email reminders 1 day before, 1 hour before, and 30 minutes before the due time.
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <!-- Footer -->
-                    <div style="background-color: #f9f9f9; padding: 20px; text-align: center; border-top: 1px solid #e0e0e0;">
-                        <p style="margin: 0 0 5px 0; color: #999; font-size: 12px;">
-                            Sent by <strong>College Assistant AI</strong>
-                        </p>
-                        <p style="margin: 0; color: #999; font-size: 11px;">
-                            Powered by Ollama | Do not reply to this email
-                        </p>
                     </div>
                 </div>
             </div>
@@ -240,7 +191,17 @@ class CalendarManager:
             
             if not self.creds or not self.creds.valid:
                 if self.creds and self.creds.expired and self.creds.refresh_token:
-                    self.creds.refresh(Request())
+                    try:
+                        self.creds.refresh(Request())
+                    except Exception as e:
+                        print(f"⚠️ Token refresh failed: {e}")
+                        os.remove('token.pickle')
+                        if os.path.exists('credentials.json'):
+                            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+                            self.creds = flow.run_local_server(port=0)
+                        else:
+                            print("⚠️ credentials.json not found - Calendar disabled")
+                            return
                 else:
                     if os.path.exists('credentials.json'):
                         flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
@@ -256,11 +217,13 @@ class CalendarManager:
             print("✅ Calendar authenticated!")
         except Exception as e:
             print(f"⚠️ Calendar auth failed: {e}")
+            print("Calendar features will be disabled")
     
     def create_event(self, summary: str, description: str, 
                     start_datetime: datetime, end_datetime: datetime,
                     attendees: List[str] = None):
         if not self.service:
+            print("⚠️ Calendar service not available")
             return None, None
         
         try:
@@ -313,6 +276,120 @@ class DocumentStore:
         self.college_info = ""
         self.uploads_dir = "uploads"
         os.makedirs(self.uploads_dir, exist_ok=True)
+        
+        # Load default data if available
+        self.load_default_data()
+    
+    def load_default_data(self):
+        """Load default college data"""
+        # Default UIT RGPV Timetable
+        default_timetable = """
+UIT RGPV - COMPUTER SCIENCE DEPARTMENT
+B.Tech 3rd Year - 5th Semester Timetable
+
+MONDAY:
+9:00 AM - 10:00 AM: Computer Networks (CN) - Room 301 - Dr. Sharma
+10:00 AM - 11:00 AM: Software Engineering (SE) - Room 302 - Prof. Verma
+11:15 AM - 12:15 PM: Database Management Systems (DBMS) - Lab A - Dr. Patel
+12:15 PM - 1:15 PM: Theory of Computation (TOC) - Room 303 - Dr. Singh
+2:00 PM - 3:00 PM: Operating Systems (OS) - Room 301 - Prof. Kumar
+3:00 PM - 4:00 PM: Soft Skills Lab - Room 205
+
+TUESDAY:
+9:00 AM - 10:00 AM: Software Engineering Lab - Lab B - Prof. Verma
+10:00 AM - 11:00 AM: Computer Networks - Room 301 - Dr. Sharma
+11:15 AM - 12:15 PM: Operating Systems - Room 302 - Prof. Kumar
+12:15 PM - 1:15 PM: DBMS - Room 303 - Dr. Patel
+2:00 PM - 4:00 PM: Computer Networks Lab - Lab A - Dr. Sharma
+
+WEDNESDAY:
+9:00 AM - 10:00 AM: Theory of Computation - Room 301 - Dr. Singh
+10:00 AM - 11:00 AM: Operating Systems Lab - Lab B - Prof. Kumar
+11:15 AM - 12:15 PM: Database Management Systems - Room 302 - Dr. Patel
+12:15 PM - 1:15 PM: Software Engineering - Room 303 - Prof. Verma
+2:00 PM - 3:00 PM: Project Work - Room 401
+
+THURSDAY:
+9:00 AM - 10:00 AM: Computer Networks - Room 301 - Dr. Sharma
+10:00 AM - 11:00 AM: DBMS Lab - Lab A - Dr. Patel
+11:15 AM - 12:15 PM: Operating Systems - Room 302 - Prof. Kumar
+12:15 PM - 1:15 PM: Theory of Computation - Room 303 - Dr. Singh
+2:00 PM - 4:00 PM: Software Engineering Lab - Lab B - Prof. Verma
+
+FRIDAY:
+9:00 AM - 10:00 AM: Operating Systems - Room 301 - Prof. Kumar
+10:00 AM - 11:00 AM: Database Management Systems - Room 302 - Dr. Patel
+11:15 AM - 12:15 PM: Computer Networks - Room 303 - Dr. Sharma
+12:15 PM - 1:15 PM: Software Engineering - Room 301 - Prof. Verma
+2:00 PM - 3:00 PM: Seminar/Guest Lecture - Auditorium
+
+SATURDAY:
+9:00 AM - 11:00 AM: Practical Exams/Project Review - As per schedule
+11:00 AM - 1:00 PM: Sports/Cultural Activities
+
+Note: Lunch Break is from 1:15 PM to 2:00 PM daily
+"""
+
+        default_rules = """
+UIT RGPV - COLLEGE RULES AND REGULATIONS
+
+ATTENDANCE POLICY:
+- Minimum 75% attendance is mandatory for appearing in exams
+- Medical leaves require valid certificates from authorized doctors
+- Late arrivals (after 10 minutes) will be marked as absent
+- Attendance is taken in the first 5 minutes of each class
+
+DRESS CODE:
+- Formal/Semi-formal attire is mandatory on campus
+- ID cards must be displayed at all times
+- Sports shoes only during sports activities
+- College uniform mandatory on specific days (Mondays & Thursdays)
+
+EXAMINATION RULES:
+- Students must reach exam hall 15 minutes before exam time
+- Mobile phones and electronic devices strictly prohibited
+- Any form of unfair means leads to immediate expulsion
+- Carrying university admit card is mandatory
+
+LIBRARY RULES:
+- Books can be issued for 15 days maximum
+- Fine of Rs. 5 per day for late returns
+- Maintain silence in reading rooms
+- Reference books cannot be taken out
+
+HOSTEL RULES:
+- Entry timings: 6:00 AM to 9:00 PM for girls, 6:00 AM to 10:00 PM for boys
+- Visitors allowed only in common areas with prior permission
+- Ragging is strictly prohibited and punishable by law
+- Regular room inspections will be conducted
+
+GENERAL CONDUCT:
+- Respectful behavior with faculty and staff is mandatory
+- Damaging college property will result in penalties
+- Political activities on campus are prohibited
+- Smoking and alcohol strictly prohibited on campus
+
+FACILITIES AVAILABLE:
+- Wi-Fi Campus (24/7)
+- Computer Labs with latest software
+- Library with 50,000+ books
+- Sports Complex (Cricket, Football, Basketball, Volleyball)
+- Gym and Fitness Center
+- Cafeteria and Food Courts
+- Medical Room with nurse on duty
+- Bus facility for day scholars
+- ATM and Banking facilities
+- Auditorium with 500 seating capacity
+- Innovation and Incubation Center
+"""
+
+        if not self.timetable:
+            self.timetable = default_timetable
+            print("✅ Loaded default timetable")
+        
+        if not self.college_info:
+            self.college_info = default_rules
+            print("✅ Loaded default college rules")
     
     def extract_text_from_pdf(self, file_path: str) -> str:
         try:
@@ -322,21 +399,24 @@ class DocumentStore:
                 for page in pdf_reader.pages:
                     text += page.extract_text() + "\n"
             return text
-        except:
+        except Exception as e:
+            print(f"PDF extraction error: {e}")
             return ""
     
     def extract_text_from_txt(self, file_path: str) -> str:
         try:
             with open(file_path, 'r', encoding='utf-8') as file:
                 return file.read()
-        except:
+        except Exception as e:
+            print(f"Text extraction error: {e}")
             return ""
     
     def extract_text_from_image(self, file_path: str) -> str:
         try:
             image = Image.open(file_path)
             return pytesseract.image_to_string(image)
-        except:
+        except Exception as e:
+            print(f"OCR extraction error: {e}")
             return ""
     
     def store_document(self, file_path: str, doc_type: str) -> bool:
@@ -358,33 +438,58 @@ class DocumentStore:
                 self.college_info = content
             
             return True
-        except:
+        except Exception as e:
+            print(f"Document storage error: {e}")
             return False
     
     def get_relevant_context(self, query: str) -> str:
+        """Enhanced context retrieval with better matching"""
         context = []
         q = query.lower()
         
-        if any(w in q for w in ['timetable', 'schedule', 'class', 'time']):
+        # Time-related queries - ALWAYS include timetable
+        time_keywords = ['time', 'schedule', 'timetable', 'class', 'when', 'at', 'monday', 'tuesday', 
+                        'wednesday', 'thursday', 'friday', 'saturday', 'today', 'tomorrow']
+        
+        if any(keyword in q for keyword in time_keywords):
             if self.timetable:
-                context.append(f"TIMETABLE:\n{self.timetable[:2000]}")
+                context.append(f"=== TIMETABLE ===\n{self.timetable}")
         
-        if any(w in q for w in ['syllabus', 'course', 'subject']):
+        # Syllabus queries
+        if any(w in q for w in ['syllabus', 'course', 'subject', 'curriculum', 'topics']):
             if self.syllabus:
-                context.append(f"SYLLABUS:\n{self.syllabus[:2000]}")
+                context.append(f"=== SYLLABUS ===\n{self.syllabus}")
         
-        if any(w in q for w in ['college', 'campus', 'facility']):
+        # College info queries
+        if any(w in q for w in ['college', 'campus', 'facility', 'rule', 'regulation', 'hostel', 'library', 'exam']):
             if self.college_info:
-                context.append(f"COLLEGE INFO:\n{self.college_info[:2000]}")
+                context.append(f"=== COLLEGE INFORMATION ===\n{self.college_info}")
         
-        return "\n\n".join(context) if context else "No documents uploaded."
+        # If no specific keywords but documents exist, provide all
+        if not context and (self.timetable or self.syllabus or self.college_info):
+            if self.timetable:
+                context.append(f"=== TIMETABLE ===\n{self.timetable[:2000]}")
+            if self.college_info:
+                context.append(f"=== COLLEGE INFO ===\n{self.college_info[:1000]}")
+        
+        return "\n\n".join(context) if context else "No relevant documents found."
 
 # ==================== OLLAMA AGENT ====================
 
 class CollegeAgent:
     def __init__(self, model_name: str = "llama3.2"):
         self.model = model_name
-        self.system_prompt = "You are a helpful college assistant AI. Answer questions about timetables, syllabus, and college information concisely."
+        self.system_prompt = """You are a helpful college assistant AI for UIT RGPV. 
+
+IMPORTANT INSTRUCTIONS:
+1. When asked about timetable/schedule, ALWAYS look at the timetable data provided
+2. Answer specifically with class names, timings, rooms, and professors
+3. Be concise but include all relevant details (time, subject, room, professor)
+4. If asked about a specific time slot, extract that exact information
+5. For college rules, provide clear and complete information
+6. Never say "I don't have access" when the data is provided in context
+
+Answer naturally and helpfully using the context provided."""
     
     def generate_response(self, query: str, context: str, 
                          conversation_history: List[ChatMessage] = None) -> str:
@@ -395,11 +500,20 @@ class CollegeAgent:
                 for msg in conversation_history[-5:]:
                     messages.append({"role": msg.role, "content": msg.content})
             
-            messages.append({"role": "user", "content": f"Context:\n{context}\n\nQuery: {query}"})
+            # Enhanced prompt with context
+            user_message = f"""Context Information:
+{context}
+
+User Question: {query}
+
+Please answer the question using the context provided above. Be specific with details like times, room numbers, and professor names when available."""
+            
+            messages.append({"role": "user", "content": user_message})
             
             response = ollama.chat(model=self.model, messages=messages)
             return response['message']['content']
-        except:
+        except Exception as e:
+            print(f"Ollama error: {e}")
             return "Error: Make sure Ollama is running (ollama serve)"
 
 # Initialize everything
@@ -414,8 +528,12 @@ agent = CollegeAgent()
 async def root():
     return {
         "status": "running",
-        "message": "College Assistant API",
-        "calendar": "Enabled" if calendar_manager.service else "Disabled"
+        "message": "College Assistant API - UIT RGPV",
+        "calendar": "Enabled" if calendar_manager.service else "Disabled",
+        "data_loaded": {
+            "timetable": bool(doc_store.timetable),
+            "college_info": bool(doc_store.college_info)
+        }
     }
 
 @app.post("/upload/{doc_type}")
@@ -443,8 +561,10 @@ async def send_assignment(assignment: AssignmentEmail):
         due_time_parts = assignment.due_time.split(":")
         due_datetime = due_date_obj.replace(hour=int(due_time_parts[0]), minute=int(due_time_parts[1]))
         
-        # Create calendar event FIRST
+        # Create calendar event
         event_id, event_link = None, None
+        calendar_success = False
+        
         if calendar_manager.service:
             event_id, event_link = calendar_manager.create_event(
                 summary=f"📚 {assignment.subject}: {assignment.assignment_title}",
@@ -453,8 +573,9 @@ async def send_assignment(assignment: AssignmentEmail):
                 end_datetime=due_datetime,
                 attendees=assignment.student_emails
             )
+            calendar_success = event_id is not None
         
-        # Create and send email
+        # Send email
         email_body = email_manager.create_assignment_email_body(
             assignment.assignment_title,
             assignment.description,
@@ -474,7 +595,7 @@ async def send_assignment(assignment: AssignmentEmail):
         return {
             "status": "success",
             "email_sent": email_sent,
-            "calendar_event_created": event_id is not None,
+            "calendar_event_created": calendar_success,
             "event_id": event_id,
             "event_link": event_link,
             "recipients": len(assignment.student_emails)
@@ -483,6 +604,7 @@ async def send_assignment(assignment: AssignmentEmail):
     except ValueError as e:
         raise HTTPException(400, str(e))
     except Exception as e:
+        print(f"Error in send_assignment: {e}")
         raise HTTPException(500, str(e))
 
 @app.post("/query", response_model=QueryResponse)
@@ -490,7 +612,7 @@ async def query_agent(request: QueryRequest):
     try:
         context = doc_store.get_relevant_context(request.message)
         response = agent.generate_response(request.message, context, request.conversation_history)
-        return QueryResponse(response=response, context_used=context if context != "No documents uploaded." else None)
+        return QueryResponse(response=response, context_used=context[:500] if context else None)
     except Exception as e:
         raise HTTPException(500, str(e))
 
@@ -504,8 +626,9 @@ async def get_document_status():
 
 if __name__ == "__main__":
     import uvicorn
-    print("\n🚀 College Assistant Backend")
+    print("\n🚀 College Assistant Backend - UIT RGPV")
     print(f"📧 Email: Enabled")
-    print(f"📅 Calendar: {'Enabled' if calendar_manager.service else 'Disabled (Run setup_calendar.py)'}")
+    print(f"📅 Calendar: {'Enabled' if calendar_manager.service else 'Disabled'}")
+    print(f"📚 Default Data: Loaded")
     print(f"🤖 Ollama: Make sure it's running!\n")
     uvicorn.run(app, host="0.0.0.0", port=8000)
