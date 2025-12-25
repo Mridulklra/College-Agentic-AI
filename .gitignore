@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+
+# IDE / Editor folders
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Uploads or temporary data
+uploads/
+*.log
+
+# Environment variables
+.env
+*.env
+
+# Byte-compiled files
+*.sqlite3
+
+# Cache
+*.cache/
+.cache/
+token.pickle
+credentials.json
+.env
+venv/
+__pycache__/

@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Assistant AI</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        
+        const API_BASE_URL = 'http://localhost:8000';
+
+        // Landing Page Component
+        const LandingPage = ({ onNavigate }) => {
+          return (
+            <div className="min-h-screen bg-black">
+              <nav className="border-b border-gray-800 px-6 py-4">
+                <div className="max-w-7xl mx-auto flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                      <span className="text-black font-bold text-xl">CA</span>
+                    </div>
+                    <span className="text-white text-xl font-semibold">College Assistant</span>
+                  </div>
+                  <button
+                    onClick={() => onNavigate('login')}
+                    className="bg-orange-500 text-black px-6 py-2.5 rounded-lg font-semibold hover:bg-orange-400 transition"
+                  >
+                    Get Started
+                  </button>
+                </div>
+              </nav>
+
+              <div className="max-w-7xl mx-auto px-6 py-20">
+                <div className="text-center max-w-4xl mx-auto">
+                  <div className="mb-12 relative">
+                    <div className="absolute inset-0 bg-orange-500 opacity-20 blur-3xl rounded-full"></div>
+                    <div className="w-72 h-72 mx-auto bg-gray-900 rounded-full flex items-center justify-center relative z-10">
+                      <span className="text-9xl">🤖</span>
+                    </div>
+                  </div>
+
+                  <h1 className="text-6xl md:text-7xl font-bold text-white mb-6 leading-tight">
+                    Your AI-Powered
+                    <span className="text-orange-500"> College Companion</span>
+                  </h1>
+                  
+                  <p className="text-xl text-gray-400 mb-12 max-w-2xl mx-auto leading-relaxed">
+                    Upload timetables (images/PDFs), send assignments via email, and get AI-powered answers instantly.
+                  </p>
+
+                  <button
+                    onClick={() => onNavigate('login')}
+                    className="bg-orange-500 text-black px-12 py-4 rounded-lg font-bold text-lg hover:bg-orange-400 transition shadow-2xl shadow-orange-500/50 inline-flex items-center space-x-2"
+                  >
+                    <span>Start Now - It's Free</span>
+                    <span>→</span>
+                  </button>
+
+                  <div className="mt-24 grid md:grid-cols-3 gap-8">
+                    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 hover:border-orange-500 transition">
+                      <div className="w-14 h-14 bg-orange-500 bg-opacity-10 rounded-xl flex items-center justify-center mb-4">
+                        <span className="text-4xl">📸</span>
+                      </div>
+                      <h3 className="text-xl font-bold text-white mb-2">Image OCR</h3>
+                      <p className="text-gray-400">Upload timetable images and AI extracts text automatically.</p>
+                    </div>
+                    
+                    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 hover:border-orange-500 transition">
+                      <div className="w-14 h-14 bg-orange-500 bg-opacity-10 rounded-xl flex items-center justify-center mb-4">
+                        <span className="text-4xl">📧</span>
+                      </div>
+                      <h3 className="text-xl font-bold text-white mb-2">Email Assignments</h3>
+                      <p className="text-gray-400">Send assignments to students with Google Calendar integration.</p>
+                    </div>
+                    
+                    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 hover:border-orange-500 transition">
+                      <div className="w-14 h-14 bg-orange-500 bg-opacity-10 rounded-xl flex items-center justify-center mb-4">
+                        <span className="text-4xl">🤖</span>
+                      </div>
+                      <h3 className="text-xl font-bold text-white mb-2">AI Chat</h3>
+                      <p className="text-gray-400">Ask questions and get instant answers from your documents.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        // Login/Signup Component
+        const AuthPage = ({ onNavigate, onLogin }) => {
+          const [isLogin, setIsLogin] = useState(true);
+          const [formData, setFormData] = useState({
+            email: '',
+            password: '',
+            name: ''
+          });
+          const [error, setError] = useState('');
+
+          const handleSubmit = () => {
+            setError('');
+            if (isLogin) {
+              if ((formData.email === 'admin' && formData.password === 'admin') || 
+                  (formData.email && formData.password)) {
+                onLogin({ email: formData.email, name: formData.name || 'User' });
+              } else {
+                setError('Please enter valid credentials');
+              }
+            } else {
+              if (formData.name && formData.email && formData.password) {
+                onLogin({ email: formData.email, name: formData.name });
+              } else {
+                setError('Please fill all fields');
+              }
+            }
+          };
+
+          return (
+            <div className="min-h-screen bg-black flex items-center justify-center px-6">
+              <div className="max-w-md w-full">
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <span className="text-black font-bold text-2xl">CA</span>
+                  </div>
+                  <h2 className="text-4xl font-bold text-white mb-2">
+                    {isLogin ? 'Welcome Back' : 'Get Started'}
+                  </h2>
+                </div>
+
+                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
+                  <div className="space-y-5">
+                    {!isLogin && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
+                        <input
+                          type="text"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
+                          className="w-full px-4 py-3 bg-black border border-gray-800 rounded-lg text-white focus:border-orange-500 focus:outline-none transition"
+                          placeholder="Enter your name"
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Email / Username</label>
+                      <input
+                        type="text"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
+                        className="w-full px-4 py-3 bg-black border border-gray-800 rounded-lg text-white focus:border-orange-500 focus:outline-none transition"
+                        placeholder="Enter your email or username"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                      <input
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
+                        className="w-full px-4 py-3 bg-black border border-gray-800 rounded-lg text-white focus:border-orange-500 focus:outline-none transition"
+                        placeholder="Enter your password"
+                      />
+                    </div>
+
+                    {error && (
+                      <div className="bg-red-500 bg-opacity-10 border border-red-500 text-red-400 px-4 py-3 rounded-lg text-sm">
+                        {error}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleSubmit}
+                      className="w-full bg-orange-500 text-black py-3.5 rounded-lg font-bold hover:bg-orange-400 transition text-lg"
+                    >
+                      {isLogin ? 'Login' : 'Create Account'}
+                    </button>
+                  </div>
+
+                  <div className="mt-6 text-center">
+                    <button
+                      onClick={() => {
+                        setIsLogin(!isLogin);
+                        setError('');
+                        setFormData({ email: '', password: '', name: '' });
+                      }}
+                      className="text-orange-500 hover:text-orange-400 font-medium"
+                    >
+                      {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Login'}
+                    </button>
+                  </div>
+
+                  {isLogin && (
+                    <div className="mt-6 p-4 bg-orange-500 bg-opacity-10 border border-orange-500 rounded-lg">
+                      <p className="text-sm text-gray-300 text-center">
+                        Demo: <span className="font-mono font-bold text-orange-500">admin / admin</span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => onNavigate('landing')}
+                  className="mt-6 w-full text-gray-400 hover:text-white font-medium transition"
+                >
+                  ← Back to Home
+                </button>
+              </div>
+            </div>
+          );
+        };
+
+        // Chat Page Component
+        const ChatPage = ({ user, onLogout }) => {
+          const [messages, setMessages] = useState([]);
+          const [input, setInput] = useState('');
+          const [loading, setLoading] = useState(false);
+          const [uploadStatus, setUploadStatus] = useState({ timetable: false, syllabus: false, info: false });
+          const [showUpload, setShowUpload] = useState(false);
+          const [showAssignment, setShowAssignment] = useState(false);
+          const [assignmentData, setAssignmentData] = useState({
+            emails: '',
+            subject: '',
+            title: '',
+            description: '',
+            dueDate: '',
+            dueTime: '23:59'
+          });
+          const messagesEndRef = useRef(null);
+
+          const scrollToBottom = () => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          };
+
+          useEffect(() => {
+            scrollToBottom();
+          }, [messages]);
+
+          useEffect(() => {
+            checkDocumentStatus();
+          }, []);
+
+          const checkDocumentStatus = async () => {
+            try {
+              const response = await fetch(`${API_BASE_URL}/documents/status`);
+              const data = await response.json();
+              setUploadStatus(data);
+            } catch (error) {
+              console.error('Error checking document status:', error);
+            }
+          };
+
+          const handleUpload = async (file, docType) => {
+            try {
+              const formData = new FormData();
+              formData.append('file', file);
+
+              const response = await fetch(`${API_BASE_URL}/upload/${docType}`, {
+                method: 'POST',
+                body: formData,
+              });
+
+              if (response.ok) {
+                const data = await response.json();
+                setUploadStatus(prev => ({ ...prev, [docType]: true }));
+                setMessages(prev => [...prev, {
+                  role: 'system',
+                  content: `✅ ${data.message}`
+                }]);
+              } else {
+                throw new Error('Upload failed');
+              }
+            } catch (error) {
+              setMessages(prev => [...prev, {
+                role: 'system',
+                content: `❌ Failed to upload file. Please try again.`
+              }]);
+            }
+          };
+
+          const handleFileSelect = (e, docType) => {
+            const file = e.target.files[0];
+            if (file) {
+              handleUpload(file, docType);
+            }
+          };
+
+          const sendAssignmentEmail = async () => {
+            try {
+              const emailList = assignmentData.emails.split(',').map(e => e.trim());
+              
+              const response = await fetch(`${API_BASE_URL}/send-assignment`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                  student_emails: emailList,
+                  subject: assignmentData.subject,
+                  assignment_title: assignmentData.title,
+                  description: assignmentData.description,
+                  due_date: assignmentData.dueDate,
+                  due_time: assignmentData.dueTime
+                })
+              });
+
+              if (response.ok) {
+                const data = await response.json();
+                setMessages(prev => [...prev, {
+                  role: 'system',
+                  content: `✅ Assignment sent to ${data.recipients} students!\n📧 Email: ${data.email_sent ? 'Sent' : 'Failed'}\n📅 Calendar: ${data.calendar_event_created ? 'Created' : 'Failed'}`
+                }]);
+                setAssignmentData({emails: '', subject: '', title: '', description: '', dueDate: '', dueTime: '23:59'});
+                setShowAssignment(false);
+              }
+            } catch (error) {
+              setMessages(prev => [...prev, {role: 'system', content: '❌ Failed to send assignment'}]);
+            }
+          };
+
+          const sendMessage = async () => {
+            if (!input.trim() || loading) return;
+
+            const userMessage = { role: 'user', content: input };
+            setMessages(prev => [...prev, userMessage]);
+            setInput('');
+            setLoading(true);
+
+            try {
+              const conversationHistory = messages.map(msg => ({
+                role: msg.role === 'user' ? 'user' : 'assistant',
+                content: msg.content
+              }));
+
+              const response = await fetch(`${API_BASE_URL}/query`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  message: input,
+                  conversation_history: conversationHistory
+                }),
+              });
+
+              if (!response.ok) {
+                throw new Error('Failed to get response');
+              }
+
+              const data = await response.json();
+              setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: data.response
+              }]);
+            } catch (error) {
+              setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: 'Sorry, I encountered an error. Please make sure the backend server is running on http://localhost:8000'
+              }]);
+            } finally {
+              setLoading(false);
+            }
+          };
+
+          return (
+            <div className="h-screen flex flex-col bg-black">
+              <header className="bg-gray-900 border-b border-gray-800 px-6 py-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                      <span className="text-black font-bold">CA</span>
+                    </div>
+                    <div>
+                      <h1 className="text-lg font-bold text-white">College Assistant AI</h1>
+                      <p className="text-xs text-gray-400">Powered by Ollama</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => setShowUpload(!showUpload)}
+                      className="px-4 py-2 bg-orange-500 text-black rounded-lg hover:bg-orange-400 transition font-semibold text-sm"
+                    >
+                      📄 Upload
+                    </button>
+                    <button
+                      onClick={() => setShowAssignment(!showAssignment)}
+                      className="px-4 py-2 bg-green-500 text-black rounded-lg hover:bg-green-400 transition font-semibold text-sm"
+                    >
+                      ✉️ Assignment
+                    </button>
+                    <div className="flex items-center space-x-3">
+                      <div className="text-right">
+                        <p className="font-semibold text-white text-sm">{user.name}</p>
+                        <p className="text-xs text-gray-400">{user.email}</p>
+                      </div>
+                      <button
+                        onClick={onLogout}
+                        className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition font-semibold text-sm"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {showUpload && (
+                  <div className="mt-4 bg-gray-800 border border-gray-700 rounded-xl p-6">
+                    <h3 className="font-semibold text-white mb-4">Upload Documents</h3>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Timetable {uploadStatus.timetable && <span className="text-orange-500">✓</span>}
+                        </label>
+                        <input
+                          type="file"
+                          accept=".pdf,.txt,.png,.jpg,.jpeg"
+                          onChange={(e) => handleFileSelect(e, 'timetable')}
+                          className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black hover:file:bg-orange-400 file:cursor-pointer file:font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Syllabus {uploadStatus.syllabus && <span className="text-orange-500">✓</span>}
+                        </label>
+                        <input
+                          type="file"
+                          accept=".pdf,.txt"
+                          onChange={(e) => handleFileSelect(e, 'syllabus')}
+                          className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black hover:file:bg-orange-400 file:cursor-pointer file:font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          College Info {uploadStatus.info && <span className="text-orange-500">✓</span>}
+                        </label>
+                        <input
+                          type="file"
+                          accept=".pdf,.txt"
+                          onChange={(e) => handleFileSelect(e, 'info')}
+                          className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-orange-500 file:text-black hover:file:bg-orange-400 file:cursor-pointer file:font-semibold"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {showAssignment && (
+                  <div className="mt-4 bg-gray-800 border border-gray-700 rounded-xl p-6">
+                    <h3 className="font-semibold text-white mb-4">📧 Send Assignment Email</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Student Emails (comma-separated)</label>
+                        <input
+                          type="text"
+                          placeholder="student1@email.com, student2@email.com"
+                          value={assignmentData.emails}
+                          onChange={(e) => setAssignmentData({...assignmentData, emails: e.target.value})}
+                          className="w-full px-4 py-2 bg-black border border-gray-800 rounded-lg text-white"
+                        />
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-2">Subject</label>
+                          <input
+                            type="text"
+                            placeholder="e.g., Data Structures"
+                            value={assignmentData.subject}
+                            onChange={(e) => setAssignmentData({...assignmentData, subject: e.target.value})}
+                            className="w-full px-4 py-2 bg-black border border-gray-800 rounded-lg text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-2">Assignment Title</label>
+                          <input
+                            type="text"
+                            placeholder="e.g., Linked List Implementation"
+                            value={assignmentData.title}
+                            onChange={(e) => setAssignmentData({...assignmentData, title: e.target.value})}
+                            className="w-full px-4 py-2 bg-black border border-gray-800 rounded-lg text-white"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                        <textarea
+                          placeholder="Assignment details..."
+                          value={assignmentData.description}
+                          onChange={(e) => setAssignmentData({...assignmentData, description: e.target.value})}
+                          className="w-full px-4 py-2 bg-black border border-gray-800 rounded-lg text-white h-24"
+                        />
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-2">Due Date</label>
+                          <input
+                            type="date"
+                            value={assignmentData.dueDate}
+                            onChange={(e) => setAssignmentData({...assignmentData, dueDate: e.target.value})}
+                            className="w-full px-4 py-2 bg-black border border-gray-800 rounded-lg text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-2">Due Time</label>
+                          <input
+                            type="time"
+                            value={assignmentData.dueTime}
+                            onChange={(e) => setAssignmentData({...assignmentData, dueTime: e.target.value})}
+                            className="w-full px-4 py-2 bg-black border border-gray-800 rounded-lg text-white"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        onClick={sendAssignmentEmail}
+                        className="w-full bg-orange-500 text-black py-3 rounded-lg font-bold hover:bg-orange-400"
+                      >
+                        📧 Send Assignment Email
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </header>
+
+              <div className="flex-1 overflow-y-auto px-6 py-8">
+                <div className="max-w-4xl mx-auto space-y-6">
+                  {messages.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="w-24 h-24 bg-orange-500 bg-opacity-10 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-orange-500">
+                        <span className="text-5xl">🤖</span>
+                      </div>
+                      <h2 className="text-3xl font-bold text-white mb-2">
+                        Hello, {user.name}!
+                      </h2>
+                      <p className="text-gray-400 mb-8">
+                        Upload documents and start asking questions
+                      </p>
+                      <div className="grid md:grid-cols-3 gap-4 text-left">
+                        <div className="bg-gray-900 border border-gray-800 p-5 rounded-xl hover:border-orange-500 transition cursor-pointer">
+                          <p className="font-semibold text-white mb-2">📅 Schedule</p>
+                          <p className="text-sm text-gray-400">"What's my Monday schedule?"</p>
+                        </div>
+                        <div className="bg-gray-900 border border-gray-800 p-5 rounded-xl hover:border-orange-500 transition cursor-pointer">
+                          <p className="font-semibold text-white mb-2">📚 Courses</p>
+                          <p className="text-sm text-gray-400">"Tell me about my syllabus"</p>
+                        </div>
+                        <div className="bg-gray-900 border border-gray-800 p-5 rounded-xl hover:border-orange-500 transition cursor-pointer">
+                          <p className="font-semibold text-white mb-2">🏫 Campus</p>
+                          <p className="text-sm text-gray-400">"What facilities are available?"</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    messages.map((msg, idx) => (
+                      <div
+                        key={idx}
+                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-2xl rounded-2xl px-6 py-4 ${
+                            msg.role === 'user'
+                              ? 'bg-orange-500 text-black'
+                              : msg.role === 'system'
+                              ? 'bg-gray-900 border border-gray-800 text-gray-300'
+                              : 'bg-gray-900 border border-gray-800 text-white'
+                          }`}
+                        >
+                          <div className="flex items-start space-x-3">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                              msg.role === 'user' ? 'bg-black bg-opacity-20' : 'bg-orange-500 bg-opacity-10'
+                            }`}>
+                              <span className={msg.role === 'user' ? 'text-black' : 'text-orange-500'}>
+                                {msg.role === 'user' ? '👤' : msg.role === 'system' ? '📌' : '🤖'}
+                              </span>
+                            </div>
+                            <div className="flex-1 pt-1">
+                              <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  
+                  {loading && (
+                    <div className="flex justify-start">
+                      <div className="bg-gray-900 border border-gray-800 rounded-2xl px-6 py-4">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                          <div className="w-2 h-2 bg-orange-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div ref={messagesEndRef} />
+                </div>
+              </div>
+
+              <div className="bg-gray-900 border-t border-gray-800 px-6 py-4">
+                <div className="max-w-4xl mx-auto">
+                  <div className="flex space-x-4">
+                    <input
+                      type="text"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                      placeholder="Ask anything about your college..."
+                      className="flex-1 px-6 py-4 bg-black border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none transition"
+                      disabled={loading}
+                    />
+                    <button
+                      onClick={sendMessage}
+                      disabled={loading || !input.trim()}
+                      className="px-8 py-4 bg-orange-500 text-black rounded-xl font-bold hover:bg-orange-400 transition disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed"
+                    >
+                      Send
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        // Main App Component
+        function App() {
+          const [currentPage, setCurrentPage] = useState('landing');
+          const [user, setUser] = useState(null);
+
+          const handleLogin = (userData) => {
+            setUser(userData);
+            setCurrentPage('chat');
+          };
+
+          const handleLogout = () => {
+            setUser(null);
+            setCurrentPage('landing');
+          };
+
+          if (currentPage === 'landing') {
+            return <LandingPage onNavigate={setCurrentPage} />;
+          }
+
+          if (currentPage === 'login') {
+            return <AuthPage onNavigate={setCurrentPage} onLogin={handleLogin} />;
+          }
+
+          if (currentPage === 'chat' && user) {
+            return <ChatPage user={user} onLogout={handleLogout} />;
+          }
+
+          return null;
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

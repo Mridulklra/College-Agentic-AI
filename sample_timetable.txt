@@ -1,0 +1,27 @@
+
+COLLEGE TIMETABLE - Computer Science Department
+
+MONDAY:
+9:00 AM - 10:00 AM: Data Structures - Room 101 - Prof. Smith
+10:15 AM - 11:15 AM: Operating Systems - Lab 2 - Prof. Johnson
+11:30 AM - 12:30 PM: Database Management - Room 205 - Prof. Williams
+2:00 PM - 3:00 PM: Web Development - Lab 1 - Prof. Brown
+
+TUESDAY:
+9:00 AM - 10:00 AM: Computer Networks - Room 303 - Prof. Davis
+10:15 AM - 11:15 AM: Software Engineering - Room 101 - Prof. Miller
+1:00 PM - 2:00 PM: AI and Machine Learning - Lab 3 - Prof. Wilson
+
+WEDNESDAY:
+9:00 AM - 10:00 AM: Data Structures Lab - Lab 2 - Prof. Smith
+11:00 AM - 12:00 PM: Database Lab - Lab 1 - Prof. Williams
+2:00 PM - 3:00 PM: Project Work - Room 401
+
+THURSDAY:
+9:00 AM - 10:00 AM: Computer Networks Lab - Lab 3 - Prof. Davis
+10:15 AM - 11:15 AM: Operating Systems - Room 101 - Prof. Johnson
+2:00 PM - 4:00 PM: Seminar - Auditorium 
+FRIDAY:
+9:00 AM - 10:00 AM: Web Development - Room 303 - Prof. Brown
+10:15 AM - 11:15 AM: AI and Machine Learning - Room 205 - Prof. Wilson
+11:30 AM - 12:30 PM: Software Engineering Lab - Lab 1 - Prof. Miller
