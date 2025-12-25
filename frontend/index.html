@@ -666,3 +666,315 @@
     </script>
 </body>
 </html>
+
+
+
+
+<!-- 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Assistant AI - Fixed Email</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+        
+        const API_BASE_URL = 'http://localhost:8000';
+
+        function EmailValidator() {
+          const [assignmentData, setAssignmentData] = useState({
+            emails: '',
+            subject: '',
+            title: '',
+            description: '',
+            dueDate: '',
+            dueTime: '23:59'
+          });
+          const [status, setStatus] = useState('');
+          const [validatedEmails, setValidatedEmails] = useState([]);
+          const [loading, setLoading] = useState(false);
+
+          const validateEmail = (email) => {
+            const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            return regex.test(email);
+          };
+
+          const handleEmailChange = (value) => {
+            setAssignmentData({...assignmentData, emails: value});
+            
+            // Real-time validation
+            const emailList = value.split(',')
+              .map(e => e.trim())
+              .filter(e => e.length > 0);
+            
+            const validated = emailList.map(email => ({
+              email,
+              valid: validateEmail(email)
+            }));
+            
+            setValidatedEmails(validated);
+          };
+
+          const sendAssignmentEmail = async () => {
+            // Validate all required fields
+            if (!assignmentData.emails.trim()) {
+              setStatus('❌ Please enter at least one email address');
+              return;
+            }
+            
+            if (!assignmentData.subject.trim()) {
+              setStatus('❌ Please enter a subject');
+              return;
+            }
+            
+            if (!assignmentData.title.trim()) {
+              setStatus('❌ Please enter an assignment title');
+              return;
+            }
+            
+            if (!assignmentData.description.trim()) {
+              setStatus('❌ Please enter a description');
+              return;
+            }
+            
+            if (!assignmentData.dueDate) {
+              setStatus('❌ Please select a due date');
+              return;
+            }
+
+            // Clean and validate emails
+            const emailList = assignmentData.emails
+              .split(',')
+              .map(e => e.trim().toLowerCase())
+              .filter(e => e.length > 0);
+            
+            // Check if all emails are valid
+            const invalidEmails = emailList.filter(email => !validateEmail(email));
+            if (invalidEmails.length > 0) {
+              setStatus(`❌ Invalid email format: ${invalidEmails.join(', ')}`);
+              return;
+            }
+
+            setLoading(true);
+            setStatus('📧 Sending email...');
+
+            try {
+              console.log('Sending assignment with data:', {
+                student_emails: emailList,
+                subject: assignmentData.subject,
+                assignment_title: assignmentData.title,
+                description: assignmentData.description,
+                due_date: assignmentData.dueDate,
+                due_time: assignmentData.dueTime
+              });
+
+              const response = await fetch(`${API_BASE_URL}/send-assignment`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                  student_emails: emailList, // Send as array directly
+                  subject: assignmentData.subject,
+                  assignment_title: assignmentData.title,
+                  description: assignmentData.description,
+                  due_date: assignmentData.dueDate,
+                  due_time: assignmentData.dueTime
+                })
+              });
+
+              const data = await response.json();
+              console.log('Server response:', data);
+
+              if (response.ok) {
+                if (data.email_sent) {
+                  setStatus(`✅ Assignment sent successfully to ${data.recipients} student(s)!\n📧 Email: Sent\n📅 Calendar: ${data.calendar_event_created ? 'Created' : 'Not created'}`);
+                } else {
+                  setStatus(`⚠️ Partial success - Email sending failed but request processed.\nCheck backend logs for details.`);
+                }
+                
+                // Clear form on success
+                if (data.email_sent) {
+                  setAssignmentData({
+                    emails: '',
+                    subject: '',
+                    title: '',
+                    description: '',
+                    dueDate: '',
+                    dueTime: '23:59'
+                  });
+                  setValidatedEmails([]);
+                }
+              } else {
+                setStatus(`❌ Server error: ${data.detail || 'Unknown error'}`);
+              }
+            } catch (error) {
+              console.error('Error sending assignment:', error);
+              setStatus(`❌ Failed to send assignment: ${error.message}\nMake sure backend is running!`);
+            } finally {
+              setLoading(false);
+            }
+          };
+
+          return (
+            <div className="min-h-screen bg-black p-8">
+              <div className="max-w-3xl mx-auto">
+                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
+                  <h1 className="text-3xl font-bold text-white mb-2">📧 Send Assignment Email</h1>
+                  <p className="text-gray-400 mb-8">Fixed email validation and sending</p>
+
+                  <div className="space-y-6">
+                    {/* Email Input with Validation */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Student Emails (comma-separated)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="student1@email.com, student2@email.com"
+                        value={assignmentData.emails}
+                        onChange={(e) => handleEmailChange(e.target.value)}
+                        className="w-full px-4 py-3 bg-black border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none"
+                      />
+                      
+                      {/* Email Validation Display */}
+                      {validatedEmails.length > 0 && (
+                        <div className="mt-3 space-y-2">
+                          {validatedEmails.map((item, idx) => (
+                            <div key={idx} className={`flex items-center space-x-2 text-sm ${item.valid ? 'text-green-400' : 'text-red-400'}`}>
+                              <span>{item.valid ? '✓' : '✗'}</span>
+                              <span>{item.email}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Subject and Title */}
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Subject</label>
+                        <input
+                          type="text"
+                          placeholder="e.g., Data Structures"
+                          value={assignmentData.subject}
+                          onChange={(e) => setAssignmentData({...assignmentData, subject: e.target.value})}
+                          className="w-full px-4 py-3 bg-black border border-gray-800 rounded-lg text-white focus:border-orange-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Assignment Title</label>
+                        <input
+                          type="text"
+                          placeholder="e.g., Linked List Implementation"
+                          value={assignmentData.title}
+                          onChange={(e) => setAssignmentData({...assignmentData, title: e.target.value})}
+                          className="w-full px-4 py-3 bg-black border border-gray-800 rounded-lg text-white focus:border-orange-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
+                      <textarea
+                        placeholder="Assignment details and requirements..."
+                        value={assignmentData.description}
+                        onChange={(e) => setAssignmentData({...assignmentData, description: e.target.value})}
+                        className="w-full px-4 py-3 bg-black border border-gray-800 rounded-lg text-white h-32 focus:border-orange-500 focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Due Date and Time */}
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Due Date</label>
+                        <input
+                          type="date"
+                          value={assignmentData.dueDate}
+                          onChange={(e) => setAssignmentData({...assignmentData, dueDate: e.target.value})}
+                          className="w-full px-4 py-3 bg-black border border-gray-800 rounded-lg text-white focus:border-orange-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Due Time</label>
+                        <input
+                          type="time"
+                          value={assignmentData.dueTime}
+                          onChange={(e) => setAssignmentData({...assignmentData, dueTime: e.target.value})}
+                          className="w-full px-4 py-3 bg-black border border-gray-800 rounded-lg text-white focus:border-orange-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Status Message */}
+                    {status && (
+                      <div className={`p-4 rounded-lg border ${
+                        status.includes('✅') 
+                          ? 'bg-green-500 bg-opacity-10 border-green-500 text-green-400'
+                          : status.includes('⚠️')
+                          ? 'bg-yellow-500 bg-opacity-10 border-yellow-500 text-yellow-400'
+                          : 'bg-red-500 bg-opacity-10 border-red-500 text-red-400'
+                      }`}>
+                        <pre className="whitespace-pre-wrap font-mono text-sm">{status}</pre>
+                      </div>
+                    )}
+
+                    {/* Send Button */}
+                    <button
+                      onClick={sendAssignmentEmail}
+                      disabled={loading || validatedEmails.some(e => !e.valid)}
+                      className="w-full bg-orange-500 text-black py-4 rounded-lg font-bold text-lg hover:bg-orange-400 transition disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed"
+                    >
+                      {loading ? '📧 Sending...' : '📧 Send Assignment Email'}
+                    </button>
+
+                    {/* Quick Test Buttons */}
+                    <div className="border-t border-gray-800 pt-6 mt-6">
+                      <h3 className="text-white font-semibold mb-3">Quick Test</h3>
+                      <button
+                        onClick={() => {
+                          setAssignmentData({
+                            emails: 'mridulkalra700@gmail.com',
+                            subject: 'Data Structures',
+                            title: 'Linked List Assignment - Test',
+                            description: 'This is a test assignment to verify email functionality. Implement basic linked list operations.',
+                            dueDate: '2024-12-31',
+                            dueTime: '23:59'
+                          });
+                          handleEmailChange('mridulkalra700@gmail.com');
+                        }}
+                        className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition text-sm"
+                      >
+                        Fill Test Data
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Debug Info */}
+                <div className="mt-6 bg-gray-900 border border-gray-800 rounded-lg p-4">
+                  <h3 className="text-white font-semibold mb-2">🔍 Debug Info</h3>
+                  <div className="text-gray-400 text-sm space-y-1 font-mono">
+                    <p>Backend: {API_BASE_URL}</p>
+                    <p>Valid Emails: {validatedEmails.filter(e => e.valid).length} / {validatedEmails.length}</p>
+                    <p>Status: {loading ? 'Sending...' : 'Ready'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        ReactDOM.render(<EmailValidator />, document.getElementById('root'));
+    </script>
+</body>
+</html> -->
